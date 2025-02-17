@@ -337,7 +337,7 @@ def main():
 if __name__ == "__main__":
     print("欢迎使用提篮桥科研美容院系统（version 0.0.1）！")
     print("教程地址：https://cosmetology.zhuerding.top/，本程序仅用于除科研以外用途")
-    print("通讯作者：有命令方块之力的附魔书，通讯地址：云南农业大学理学院，邮箱：magica_book@qq.com")
+    print("通讯作者：有命令方块之力的附魔书，通讯地址：云北工农大学文学院，邮箱：magica_book@qq.com")
     auto_check()
     # 创建 ConfigParser 对象
     global config

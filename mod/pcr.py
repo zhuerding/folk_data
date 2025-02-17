@@ -27,6 +27,7 @@ def load_main_from_exe():
 
     # 动态导入 index 模块
     import index
+    os.system('cls' if os.name == 'nt' else 'clear')
     index.main()  # 调用 main 函数
 
 
@@ -40,6 +41,7 @@ def main():
         config['set_up']['float'] = "0.05"
         with open('config/config.ini', 'w') as configfile:
             config.write(configfile)
+    os.system('cls' if os.name == 'nt' else 'clear')
     print("\n已进入PCR数据优化模式，请按照引导程序填写要求：")
     print(f"您当前数据精度为：{config['set_up']['accuracy']}，混淆参数为：",
           "{:.2f}%".format(float(config['set_up']['float']) * 100), "，如有需要请前往设置界面修改。")
@@ -63,6 +65,7 @@ def main():
         print("介绍已结束")
 
     elif sk == "1":
+        os.system('cls' if os.name == 'nt' else 'clear')
         print("已进入简单优化模式，请按照引导程序填写要求：")
 
         def generate_ct_values(mean, std, num_replicates):
@@ -144,6 +147,7 @@ def main():
         # 创建 Excel 文件
         create_excel(sample_names, treatments, replicates_info, gene_name, output_file)
     elif sk == "2":
+        os.system('cls' if os.name == 'nt' else 'clear')
         print("已进入倍数优化模式，请按照引导程序填写要求：")
 
         def generate_ct_values(mean, std, num_replicates):
@@ -301,6 +305,7 @@ def main():
         load_main_from_exe()
 
     elif sk == "3":
+        os.system('cls' if os.name == 'nt' else 'clear')
         print("已进入自定义优化模式，请按照引导程序填写要求：")
 
         def generate_ct_values(mean, std, num_replicates):
@@ -436,5 +441,4 @@ def main():
         create_excel(sample_names, treatments, replicates_info, target_gene, ref_gene, output_file)
 
         input("回车后退回程序主界面")
-        os.system('cls' if os.name == 'nt' else 'clear')
         load_main_from_exe()

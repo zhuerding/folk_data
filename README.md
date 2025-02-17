@@ -236,6 +236,6 @@ config['set_up']['float'] = "0.05"
 ---
 
 ### 其余信息：
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;教程地址：(https://cosmetology.zhuerding.top/)，本程序仅用于除科研以外用途
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;教程地址：[教程地址](https://cosmetology.zhuerding.top/)，本程序仅用于除科研以外用途
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;通讯作者：有命令方块之力的附魔书，通讯地址：云北工农大学文学院，邮箱：magica_book@qq.com
