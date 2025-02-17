@@ -1,5 +1,7 @@
 import configparser
 import os
+import webbrowser
+
 import pandas as pd
 from datetime import datetime
 import random
@@ -55,6 +57,9 @@ def main():
               "值，并生成△CT Mean和△CT SD。本模式相较于自定义优化模式更模式化，具体操作请查看readme.md")
         input("自定义优化模式：根据您指定的各组△CT值平均值和内参基因CT值优化，即模拟真实PCR数据，一个生物学重复样本有3个CT值，最后优化△CT值，并生成△CT Mean和△CT "
               "SD。本模式相较于详细优化模式更自由化，具体操作请查看readme.md")
+        a = input("其余具体细节可访问教程：https://cosmetology.zhuerding.top/tutorial/PCR_readme.html，输入ok即可访问，回车以继续介绍")
+        if a.lower() == "ok":
+            webbrowser.open("https://cosmetology.zhuerding.top/tutorial/PCR_readme.html")
         print("介绍已结束")
 
     elif sk == "1":

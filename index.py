@@ -6,6 +6,7 @@ import importlib.util
 import pyperclip
 import pandas as pd
 import time
+import webbrowser
 
 
 def money():
@@ -250,7 +251,8 @@ def main():
                 print("1. 教程重置")
                 print("2. 参数调整")
                 print("3. 数据统计")
-                print("4. 返回主菜单")
+                print("4. 访问教程")
+                print("5. 返回主菜单")
 
                 choice = input("请输入您的选择（1/2/3）：")
                 return choice
@@ -321,6 +323,8 @@ def main():
                 os.system('cls' if os.name == 'nt' else 'clear')
                 main()
         elif choice == '4':
+            webbrowser.open("https://cosmetology.zhuerding.top/")
+        elif choice == '5':
             print("感谢您的使用，已退出程序！")
             with open('config/config.ini', 'w') as configfile:
                 config.write(configfile)
@@ -332,12 +336,14 @@ def main():
 
 if __name__ == "__main__":
     print("欢迎使用提篮桥科研美容院系统（version 0.0.1）！")
-    print("教程地址：https://research_modify.zhuerding.top，本程序仅用于除科研以外用途")
+    print("教程地址：https://cosmetology.zhuerding.top/，本程序仅用于除科研以外用途")
     print("通讯作者：有命令方块之力的附魔书，通讯地址：云南农业大学理学院，邮箱：magica_book@qq.com")
     auto_check()
     # 创建 ConfigParser 对象
     global config
     config = configparser.ConfigParser()
     config.read('config/config.ini')
+    if config["used"]["num"] == str(1):
+        webbrowser.open("https://cosmetology.zhuerding.top/")
     seed()
     main()
