@@ -1,7 +1,6 @@
 import configparser
 import os
 import webbrowser
-
 import pandas as pd
 from datetime import datetime
 import random
@@ -42,10 +41,10 @@ def main():
         with open('config/config.ini', 'w') as configfile:
             config.write(configfile)
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n已进入PCR数据优化模式，请按照引导程序填写要求：")
+    print("\n已进入PCR数据梦幻工厂插件，请按照引导程序填写要求：")
     print(f"您当前数据精度为：{config['set_up']['accuracy']}，混淆参数为：",
           "{:.2f}%".format(float(config['set_up']['float']) * 100), "，如有需要请前往设置界面修改。")
-    print("本模式会根据PCR数据的模式以供优化数据，请按照以下引导程序进行操作，结果自动生成到Execl.以下为具体模式：")
+    print("本插件是专用于优化PCR数据优化而设计，请按照以下引导程序进行操作，结果自动生成到Execl.以下为具体模式：")
     print("1. 简单优化模式")
     print("2. 倍数优化模式")
     print("3. 自定义优化模式")

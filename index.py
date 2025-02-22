@@ -7,6 +7,63 @@ import pyperclip
 import pandas as pd
 import time
 import webbrowser
+import requests
+import hashlib
+from packaging import version  # 需要安装：pip install packaging
+from bs4 import BeautifulSoup
+
+
+def calculate_file_hash(file_path):
+    """计算文件的 MD5 哈希值"""
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+def check_for_updates():
+    def get_latest_version_info(url):
+        """从目标网页获取最新版本号和哈希值"""
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # 检查请求是否成功
+            soup = BeautifulSoup(response.text, "html.parser")
+            # 提取注释中的版本号和哈希值
+            version = None
+            file_hash = None
+            for comment in soup.find_all(
+                    string=lambda text: isinstance(text, str) and text.strip().startswith("版本号:")):
+                version = comment.strip().split(":")[1].strip()
+            for comment in soup.find_all(
+                    string=lambda text: isinstance(text, str) and text.strip().startswith("哈希值:")):
+                file_hash = comment.strip().split(":")[1].strip()
+            return version, file_hash
+        except Exception as e:
+            print(f"获取最新版本信息失败: {e}")
+            return None, None
+    """检查更新"""
+    # 目标网页 URL
+    update_url = "https://cosmetology.zhuerding.top/version.html"
+
+    # 获取最新版本信息
+    print("[检查更新]")
+    print("请保持网络畅通")
+    latest_version, latest_hash = get_latest_version_info(update_url)
+    if not latest_version or not latest_hash:
+        print("无法获取更新信息，请检查网络连接情况。")
+        return
+
+    # 比较版本号
+    if version.parse(latest_version) > version.parse(CURRENT_VERSION):
+        print(f"发现新版本: {latest_version}（当前版本: {CURRENT_VERSION}）")
+        # 比较哈希值
+        if latest_hash != CURRENT_HASH:
+            print("程序文件已更新，请访问https://github.com/zhuerding/folk_data/releases下载最新版本。")
+        else:
+            print("版本号已更新，但文件未更改。")
+    else:
+        print("更新检查结束，当前已是最新版本。")
 
 
 def money():
@@ -36,7 +93,11 @@ def main_menu():
 
 # 程序自检函数
 def auto_check():
+    print("\n程序自检中，请稍后")
+    # 检查更新中
+    check_for_updates()
     # 定义初始的INI文件结构（只包含 section 和 key，值可以不同）
+    print("[文件完整性检查]")
     INITIAL_INI_STRUCTURE = {
         "guide": ["mode1", "mode2"],
         "set_up": ["accuracy", "float", "seed"],
@@ -50,10 +111,10 @@ def auto_check():
     # 检查并创建 config 和 mod 文件夹
     if not os.path.exists(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
-        print("自检异常，文件树已重置")
+        print("文件完整性异常，文件树已重置")
     if not os.path.exists(MODE_DIR):
         os.makedirs(MODE_DIR)
-        print("自检异常，文件树已重置")
+        print("文件完整性异常，文件树已重置")
     # 检查并创建 config.ini 文件
     if not os.path.exists(CONFIG_FILE_PATH):
         # 如果文件不存在，创建并写入初始结构和值
@@ -62,7 +123,7 @@ def auto_check():
             config[section] = {key: "0" for key in keys}  # 设置初始值为 0
         with open(CONFIG_FILE_PATH, 'w') as configfile:
             config.write(configfile)
-        print("自检异常，文件树已重置")
+        print("文件完整性异常，文件树已重置")
     else:
         # 如果文件存在，检查结构是否一致
         config = configparser.ConfigParser()
@@ -85,8 +146,9 @@ def auto_check():
                 config[section] = {key: "0" for key in keys}  # 设置初始值为 0
             with open(CONFIG_FILE_PATH, 'w') as configfile:
                 config.write(configfile)
-            print("自检异常值，配置文件已重置")
+            print("配置文件出现异常值，配置文件已重置")
         else:
+            print("文件完整性检查结束")
             print("自检结束，程序无误\n")
             config['used']['num'] = str(int(config['used']['num']) + 1)
             if 0 < int(config['used']['num']) <= 10:
@@ -199,9 +261,11 @@ def main():
         elif choice == '2':
             def load_and_run_module(module_name):
                 try:
-                    # 动态加载模块
-                    module_path = f"mod/{module_name}.py"
+                    # 构造模块文件路径
+                    module_path = os.path.join("mod", module_name, module_name + ".py")
                     spec = importlib.util.spec_from_file_location(module_name, module_path)
+                    if spec is None:
+                        raise ImportError(f"无法加载模块 {module_name}，文件路径 {module_path} 不存在。")
                     module = importlib.util.module_from_spec(spec)
                     sys.modules[module_name] = module
                     spec.loader.exec_module(module)
@@ -210,21 +274,32 @@ def main():
                         module.main()
                     else:
                         print(f"模块 {module_name} 中没有 main 方法。")
-                except Exception as e:
-                    print(e)
+                except ImportError:
                     print(f"模块 {module_name} 不存在。")
 
             def list_modules():
-                """列出 mod 文件夹中的所有模块"""
+                """列出 mod 文件夹及其子文件夹中与子文件夹同名的模块"""
                 modules = []
-                for file in os.listdir("mod"):
-                    if file.endswith(".py") and file != "__init__.py":
-                        modules.append(file[:-3])  # 去掉 .py 后缀
+                for dir_name in os.listdir("mod"):
+                    dir_path = os.path.join("mod", dir_name)
+                    # 检查是否是文件夹
+                    if os.path.isdir(dir_path):
+                        # 构造与子文件夹同名的 .py 文件路径
+                        module_file = os.path.join(dir_path, f"{dir_name}.py")
+                        if os.path.exists(module_file):
+                            # 如果存在同名 .py 文件，则将其纳入模块列表
+                            # 将路径转换为模块格式（例如：subfolder1.subfolder1）
+                            module_path = os.path.relpath(dir_path, "mod").replace(os.sep, '.')
+                            modules.append(module_path)
                 return modules
             # 列出所有可用模块
             with open('config/config.ini', 'w') as configfile:
                 config.write(configfile)
             modules = list_modules()
+            if not modules:
+                print("未找到任何可用模块。")
+                os.system('cls' if os.name == 'nt' else 'clear')
+                main()
             print("\n已进入自定义实验数据优化模式，请按照引导程序填写要求：")
             if config['guide']['mode2'] == "0":
                 sk = input("本模式可以通过用户自定义编写的模块，执行模块中的内容生成用户所需数据。模块编写请查看官方文档。引导程序中如需中途退出，请输入quit"
@@ -233,17 +308,24 @@ def main():
                     config['guide']['mode2'] = "1"
                 with open('config/config.ini', 'w') as configfile:
                     config.write(configfile)
-            print("可用模块:", modules)
+            print("可用模块:")
+            for i, module in enumerate(modules, 1):
+                print(f"{i}. {module}")
 
-            # 让用户选择模块
-            module_name = input("请输入要执行的模块名: ").strip()
-            if module_name in modules:
-                load_and_run_module(module_name)
-            else:
-                print("模块不存在，请检查输入。")
-                time.sleep(2)
-                os.system('cls' if os.name == 'nt' else 'clear')
-                main()
+                # 用户选择模块
+                try:
+                    choice = int(input("请选择要运行的模块编号（输入 0 退出）: "))
+                    if choice == 0:
+                        print("退出程序。")
+                        return
+                    if choice < 1 or choice > len(modules):
+                        print("无效的选择。")
+                        return
+                    selected_module = modules[choice - 1]
+                    print(f"正在加载并运行模块: {selected_module}")
+                    load_and_run_module(selected_module)
+                except ValueError:
+                    print("请输入有效的数字。")
 
         elif choice == "3":
             def menu():
@@ -319,12 +401,12 @@ def main():
                             config.write(configfile)
                 os.system('cls' if os.name == 'nt' else 'clear')
                 main()
-            if choice == "4":
+            elif choice == '4':
+                webbrowser.open("https://cosmetology.zhuerding.top/")
+            elif choice == "5":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 main()
         elif choice == '4':
-            webbrowser.open("https://cosmetology.zhuerding.top/")
-        elif choice == '5':
             print("感谢您的使用，已退出程序！")
             with open('config/config.ini', 'w') as configfile:
                 config.write(configfile)
@@ -335,9 +417,14 @@ def main():
 
 
 if __name__ == "__main__":
-    print("欢迎使用提篮桥科研美容院系统（version 0.0.1）！")
+    # 程序当前版本号和哈希值
+    CURRENT_VERSION = "0.0.2"
+    # current_file_hash = calculate_file_hash(__file__)
+    # print(f"当前文件哈希值: {current_file_hash}")
+    CURRENT_HASH = "103cc20eccdbb7e13dc61afa53b50aa3"  # 示例哈希值，需根据实际文件计算
+    print("欢迎使用提篮桥科研美容院系统（version 0.0.2）！")
     print("教程地址：https://cosmetology.zhuerding.top/，本程序仅用于除科研以外用途")
-    print("通讯作者：有命令方块之力的附魔书，通讯地址：云北工农大学文学院，邮箱：magica_book@qq.com")
+    print("通讯作者：有命令方块之力的附魔书，通讯地址：云北工农兵大学黄埔学院，邮箱：magica_book@qq.com")
     auto_check()
     # 创建 ConfigParser 对象
     global config
