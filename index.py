@@ -419,7 +419,7 @@ def main():
 if __name__ == "__main__":
     # 程序当前版本号和哈希值
     CURRENT_VERSION = "0.0.2"
-    # current_file_hash = calculate_file_hash(__file__)
+    current_file_hash = calculate_file_hash(__file__)
     # print(f"当前文件哈希值: {current_file_hash}")
     CURRENT_HASH = "103cc20eccdbb7e13dc61afa53b50aa3"  # 示例哈希值，需根据实际文件计算
     print("欢迎使用提篮桥科研美容院系统（version 0.0.2）！")
