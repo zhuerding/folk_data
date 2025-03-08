@@ -11,6 +11,7 @@ import requests
 import hashlib
 from packaging import version  # 需要安装：pip install packaging
 from bs4 import BeautifulSoup
+import numpy as np
 
 
 def calculate_file_hash(file_path):
@@ -66,10 +67,10 @@ def check_for_updates():
         print("更新检查结束，当前已是最新版本。")
 
 
-def money():
+def money(rounds):
     numby = input("实验花费：（请输入一个正实数）")
     if numby.replace(".", "", 1).isdigit():  # 检查输入是否为数字
-        config["used"]["money"] = str(float(config["used"]["money"] + numby))
+        config["used"]["money"] = str(float(config["used"]["money"] + numby * rounds))
         with open('config/config.ini', 'w') as configfile:
             config.write(configfile)
     elif numby.lower() == "quit":  # 如果输入为"skip"，跳出当前循环
@@ -83,11 +84,12 @@ def main_menu():
     df = pd.DataFrame()
     print("欢迎进入优化模式选择界面：")
     print("1. 单组数据优化模式")
-    print("2. 自定义实验数据优化模式")
-    print("3. 设置")
-    print("4. 退出")
+    print("2. 多组数据优化模式")
+    print("3. 自定义实验数据优化模式")
+    print("4. 设置")
+    print("5. 退出")
 
-    choice = input("请输入您的选择（1/2/3/4）：")
+    choice = input("请输入您的选择（1/2/3/4/5）：")
     return choice
 
 
@@ -99,7 +101,7 @@ def auto_check():
     # 定义初始的INI文件结构（只包含 section 和 key，值可以不同）
     print("[文件完整性检查]")
     INITIAL_INI_STRUCTURE = {
-        "guide": ["mode1", "mode2"],
+        "guide": ["mode1", "mode2", "mode3"],
         "set_up": ["accuracy", "float", "seed"],
         "used": ["num", "money"]
     }
@@ -107,6 +109,7 @@ def auto_check():
     # 定义文件夹和文件路径
     CONFIG_DIR = 'config'
     MODE_DIR = 'mod'
+    OUTPUT_DIR = 'output'
     CONFIG_FILE_PATH = os.path.join(CONFIG_DIR, 'config.ini')
     # 检查并创建 config 和 mod 文件夹
     if not os.path.exists(CONFIG_DIR):
@@ -114,6 +117,9 @@ def auto_check():
         print("文件完整性异常，文件树已重置")
     if not os.path.exists(MODE_DIR):
         os.makedirs(MODE_DIR)
+        print("文件完整性异常，文件树已重置")
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
         print("文件完整性异常，文件树已重置")
     # 检查并创建 config.ini 文件
     if not os.path.exists(CONFIG_FILE_PATH):
@@ -230,7 +236,7 @@ def main():
             print(f"您当前数据精度为：{config['set_up']['accuracy']}，混淆参数为：",
                   "{:.2f}%".format(float(config['set_up']['float']) * 100), "，如有需要请前往设置界面修改。")
             if config['guide']['mode1'] == "0":
-                sk = input("\n介绍：本模式为根据指定平均数和方差生成一组3个的随机数以供优化数据，请按照以下引导程序进行操作，结果自动复制到您的剪切板。引导程序中如需中途退出，请输入quit"
+                sk = input("\n介绍：本模式为根据指定平均数和标准差生成一组3个的随机数以供优化数据，请按照以下引导程序进行操作，结果自动复制到您的剪切板。引导程序中如需中途退出，请输入quit"
                            "，则会自动返回主菜单（如需后续跳过本介绍语请输入skip，无需跳过则回车）")
                 if sk.lower() == "skip":
                     config['guide']['mode1'] = "1"
@@ -255,10 +261,84 @@ def main():
             print(f"您优化后的数据为:  {random_numbers_str}")
             context = input("回车后退回程序主界面")
             if context.lower() == "-m":
-                money()
+                rounds = 0
+                money(rounds)
             os.system('cls' if os.name == 'nt' else 'clear')
             main()
-        elif choice == '2':
+        elif choice == "2":
+            def generate_random_numbers(mean_range, std_range, rounds):
+                results = []
+
+                for _ in range(rounds):
+                    # 随机选择一个平均数和标准差
+                    mean = np.random.uniform(mean_range[0], mean_range[1])
+                    std = np.random.uniform(std_range[0], std_range[1])
+
+                    # 生成三个随机数，满足指定的平均数和标准差
+                    numbers = np.random.normal(mean, std, 3)
+
+                    # 计算实际的平均数和标准差
+                    actual_mean = np.mean(numbers)
+                    actual_std = np.std(numbers)
+
+                    # 将结果添加到列表中
+                    results.append(numbers.tolist() + [actual_mean, actual_std])
+
+                return results
+
+            def save_to_excel(data, filename, decimal_places):
+                # 将数据转换为DataFrame
+                df = pd.DataFrame(data, columns=['Number 1', 'Number 2', 'Number 3', 'Mean', 'Std'])
+                # 设置数据精度
+                df = df.round(decimal_places)
+                # 保存到Excel文件
+                filename = os.path.join("output", filename)
+                df.to_excel(filename, index=False)
+            if config['used']['num'] == "1" or config['used']['num'] == "0":
+                decimal_places = 2
+            else:
+                decimal_places = int(config['set_up']['accuracy'])
+            print("\n已进入多组数据优化模式，请按照引导程序填写要求：")
+            print(f"您当前数据精度为：{config['set_up']['accuracy']}", "，如有需要请前往设置界面修改。")
+            if config['guide']['mode2'] == "0":
+                sk = input("\n介绍：本模式为根据指定平均数范围、标准差范围以及重复轮次生成多组3个的随机数以供优化数据，每组数据均符合平均数范"
+                           "围和标准差范围，请按照以下引导程序进行操作，结果位于程序下output文件夹。引导程序中如需中途退出，请输入quit"
+                           "，则会自动返回主菜单（如需后续跳过本介绍语请输入skip，无需跳过则回车）")
+                if sk.lower() == "skip":
+                    config['guide']['mode2'] = "1"
+                    with open('config/config.ini', 'w') as configfile:
+                        config.write(configfile)
+                elif sk.lower() == "quit":
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    main()
+            # 获取用户输入
+            mean_min = get_input("请输入平均数范围的最小值: ")
+            mean_max = get_input("请输入平均数范围的最大值: ")
+            if mean_min >= mean_max:
+                print("请确保平均值最小值小于平均值最大值")
+                os.system('cls' if os.name == 'nt' else 'clear')
+                main()
+            std_min = get_input("请输入标准差范围的最小值: ")
+            std_max = get_input("请输入标准差范围的最大值: ")
+            if std_min >= std_max:
+                print("请确保标准差最小值小于标准差最大值")
+                os.system('cls' if os.name == 'nt' else 'clear')
+                main()
+            rounds = int(get_input("请输入重复轮次: "))
+
+            # 生成随机数
+            results = generate_random_numbers((mean_min, mean_max), (std_min, std_max), rounds)
+
+            # 保存到Excel文件
+            filename = "random_numbers.xlsx"
+            save_to_excel(results, filename, decimal_places)
+            print("您需要的数据已经生成，请打开主程序下的output文件夹内random_numbers.xlsx获取您优化的数据")
+            context = input("回车后退回程序主界面")
+            if context.lower() == "-m":
+                money(rounds)
+            os.system('cls' if os.name == 'nt' else 'clear')
+            main()
+        elif choice == '3':
             def load_and_run_module(module_name):
                 try:
                     # 构造模块文件路径
@@ -301,33 +381,33 @@ def main():
                 os.system('cls' if os.name == 'nt' else 'clear')
                 main()
             print("\n已进入自定义实验数据优化模式，请按照引导程序填写要求：")
-            if config['guide']['mode2'] == "0":
+            if config['guide']['mode3'] == "0":
                 sk = input("本模式可以通过用户自定义编写的模块，执行模块中的内容生成用户所需数据。模块编写请查看官方文档。引导程序中如需中途退出，请输入quit"
                            "，则会自动返回主菜单（如需后续跳过本介绍语请输入skip，无需跳过则回车）")
                 if sk.lower() == "skip":
-                    config['guide']['mode2'] = "1"
+                    config['guide']['mode3'] = "1"
                 with open('config/config.ini', 'w') as configfile:
                     config.write(configfile)
             print("可用模块:")
             for i, module in enumerate(modules, 1):
                 print(f"{i}. {module}")
 
-                # 用户选择模块
-                try:
-                    choice = int(input("请选择要运行的模块编号（输入 0 退出）: "))
-                    if choice == 0:
-                        print("退出程序。")
-                        return
-                    if choice < 1 or choice > len(modules):
-                        print("无效的选择。")
-                        return
-                    selected_module = modules[choice - 1]
-                    print(f"正在加载并运行模块: {selected_module}")
-                    load_and_run_module(selected_module)
-                except ValueError:
-                    print("请输入有效的数字。")
+            # 用户选择模块
+            try:
+                choice = int(input("请选择要运行的模块编号（输入 0 退出）: "))
+                if choice == 0:
+                    print("退出程序。")
+                    return
+                if choice < 1 or choice > len(modules):
+                    print("无效的选择。")
+                    return
+                selected_module = modules[choice - 1]
+                print(f"正在加载并运行模块: {selected_module}")
+                load_and_run_module(selected_module)
+            except ValueError:
+                print("请输入有效的数字。")
 
-        elif choice == "3":
+        elif choice == "4":
             def menu():
                 print("\n欢迎进入设置界面：")
                 print("1. 教程重置")
@@ -406,7 +486,7 @@ def main():
             elif choice == "5":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 main()
-        elif choice == '4':
+        elif choice == '5':
             print("感谢您的使用，已退出程序！")
             with open('config/config.ini', 'w') as configfile:
                 config.write(configfile)
@@ -418,11 +498,11 @@ def main():
 
 if __name__ == "__main__":
     # 程序当前版本号和哈希值
-    CURRENT_VERSION = "0.0.2"
+    CURRENT_VERSION = "0.0.3"
     current_file_hash = calculate_file_hash(__file__)
-    # print(f"当前文件哈希值: {current_file_hash}")
-    CURRENT_HASH = "103cc20eccdbb7e13dc61afa53b50aa3"  # 示例哈希值，需根据实际文件计算
-    print("欢迎使用提篮桥科研美容院系统（version 0.0.2）！")
+    print(f"当前文件哈希值: {current_file_hash}")
+    CURRENT_HASH = "bf7af4f814d57aa64b8da7313e7fe517"  # 示例哈希值，需根据实际文件计算
+    print("欢迎使用提篮桥科研美容院系统（version 0.0.3）！")
     print("教程地址：https://cosmetology.zhuerding.top/，本程序仅用于除科研以外用途")
     print("通讯作者：有命令方块之力的附魔书，通讯地址：云北工农兵大学黄埔学院，邮箱：magica_book@qq.com")
     auto_check()

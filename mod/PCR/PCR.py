@@ -133,7 +133,7 @@ def main():
         # 获取当前日期并格式化为 YYYYMMDD
         current_date = datetime.now().strftime("%Y%m%d")
         # 生成带日期的文件名
-        output_file = f"{current_date}_{output_file}.xlsx"
+        output_file = os.path.join("output", f"{current_date}_{output_file}.xlsx")
 
         # 为每个样品和处理方式的组合输入重复实验数和平均数
         replicates_info = {}
@@ -254,7 +254,7 @@ def main():
         # 获取当前日期并格式化为 YYYYMMDD
         current_date = datetime.now().strftime("%Y%m%d")
         # 生成带日期的文件名
-        output_file = f"{current_date}_{base_filename}.xlsx"
+        output_file = os.path.join("output", f"{current_date}_{base_filename}.xlsx")
 
         # 固定处理方式为 sh、ov、ctrl
         treatments = ["sh", "ov", "ctrl"]
@@ -417,7 +417,7 @@ def main():
         # 获取当前日期并格式化为 YYYYMMDD
         current_date = datetime.now().strftime("%Y%m%d")
         # 生成带日期的文件名
-        output_file = f"{current_date}_{base_filename}.xlsx"
+        output_file = os.path.join("output", f"{current_date}_{base_filename}.xlsx")
 
         # 为每个样品和处理方式的组合输入重复实验数、△CT 值平均数及标准差、内参基因 CT 值平均数及标准差
         replicates_info = {}
